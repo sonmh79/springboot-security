@@ -9,12 +9,13 @@ Spring Boot Security Project with JWT Token
 ```
 .
 ├── HELP.md
+├── README.md
 ├── build
 ├── build.gradle
 ├── gradle
 ├── gradlew
 ├── gradlew.bat
-├── out 
+├── out
 ├── settings.gradle
 └── src
     ├── main
@@ -32,9 +33,11 @@ Spring Boot Security Project with JWT Token
     │   │               ├── config
     │   │               │   ├── CorsConfig.java
     │   │               │   ├── JwtConfig.java
-    │   │               │   └── SecurityConfig.java
+    │   │               │   ├── RelyingPartyConfig.java
+    │   │               │   └── SAMLSecurityConfig.java
     │   │               ├── controller
     │   │               │   ├── MemberController.java
+    │   │               │   ├── SamlController.java
     │   │               │   ├── data
     │   │               │   │   ├── Data.java
     │   │               │   │   ├── LoginData.java
@@ -65,8 +68,13 @@ Spring Boot Security Project with JWT Token
     │   │                   └── HeaderUtil.java
     │   └── resources
     │       ├── application.yml
+    │       ├── saml-certificate
+    │       │   ├── okta.cert
+    │       │   └── ssafy.cert
     │       ├── static
     │       └── templates
+    │           ├── hello.html
+    │           └── home.html
     └── test
         └── java
             └── com
