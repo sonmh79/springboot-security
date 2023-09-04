@@ -9,7 +9,10 @@
 </head>
 <body>
 <h1>Landing Page</h1>
-<p>Click <a th:href="@{/secured/hello}">login</a> to see a secured page.</p>
-<p>Click <a th:href="@{/secured/hello}">logout</a> to see a secured page.</p>
+<p>Click <a th:href="@{/signin}">login</a> to see a secured page.</p>
+<form action="/logout" method="post">
+    <label>logout</label>
+    <input type="submit">logout</input>
+</form>
 </body>
 </html>
