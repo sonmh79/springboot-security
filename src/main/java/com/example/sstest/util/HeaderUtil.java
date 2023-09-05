@@ -6,6 +6,7 @@ public class HeaderUtil {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String TOKEN_PREFIX = "Bearer ";
+    private static final String HEADER_SAML_RESPONSE = "SAMLResponse";
 
     private HeaderUtil(){
         throw new IllegalStateException("HeaderUtil class");
@@ -23,6 +24,10 @@ public class HeaderUtil {
         }
 
         return null;
+    }
+
+    public static String getSamlResponse(HttpServletRequest request) {
+        return request.getHeader(HEADER_SAML_RESPONSE);
     }
 
 }

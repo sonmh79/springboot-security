@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationToken;
 
 import java.security.Key;
 import java.util.Arrays;
@@ -25,7 +26,6 @@ public class AuthTokenProvider {
     private final Key key;
     private static final String AUTHORITIES_KEY = "role";
     private final MemberRepository memberRepository;
-
 
     /**
      * 객체 초기화
@@ -77,7 +77,6 @@ public class AuthTokenProvider {
                         .collect(Collectors.toList());
 
         log.debug("claims subject := [{}]", claims.getSubject());
-
         PrincipalDetails principalDetails = new PrincipalDetails(memberRepository.findById(String.valueOf(claims.get("id"))).orElse(null));
         return new UsernamePasswordAuthenticationToken(principalDetails, authToken, authorities);
     }

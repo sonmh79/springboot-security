@@ -11,6 +11,7 @@ import org.springframework.security.saml2.provider.service.registration.RelyingP
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
 
 import java.io.File;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 
@@ -31,13 +32,17 @@ public class RelyingPartyConfig {
 
     @Bean
     public RelyingPartyRegistrationRepository relyingPartyRegistrations() throws Exception {
+
+        return new InMemoryRelyingPartyRegistrationRepository(registration());
+    }
+
+    @Bean
+    public RelyingPartyRegistration registration() throws CertificateException {
         ClassLoader classLoader = getClass().getClassLoader();
         File verificationKey = new File(classLoader.getResource(keyPath).getFile());
         X509Certificate certificate = X509Support.decodeCertificate(verificationKey);
         Saml2X509Credential credential = Saml2X509Credential.verification(certificate);
-
         Saml2X509Credential myCredential = Saml2X509Credential.signing(privateKey, certificate);
-
         RelyingPartyRegistration registration = RelyingPartyRegistration
                 .withRegistrationId("ssafy-saml")
                 .assertingPartyDetails(party -> party
@@ -50,6 +55,6 @@ public class RelyingPartyConfig {
                 .singleLogoutServiceLocation("{baseUrl}/logout/saml2/slo")
                 .signingX509Credentials((signing) -> signing.add(myCredential))
                 .build();
-        return new InMemoryRelyingPartyRegistrationRepository(registration);
+        return registration;
     }
 }

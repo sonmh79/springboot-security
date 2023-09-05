@@ -15,21 +15,8 @@ import java.util.Map;
 @Slf4j
 public class SamlController {
 
-    @GetMapping("/signin")
-    public ResponseEntity<Map> hello(@AuthenticationPrincipal Saml2AuthenticatedPrincipal principal) {
-//        model.addAttribute("name", principal.getFirstAttribute("fullName"));
-//        model.addAttribute("userName", principal.getFirstAttribute("userName"));
-//        model.addAttribute("email", principal.getFirstAttribute("email"));
-        HashMap<String,String> map = new HashMap<>();
-        map.put("name",principal.getFirstAttribute("fullName"));
-        log.info("name: " + principal.getFirstAttribute("fullName"));
-        log.info("username: " + principal.getFirstAttribute("userName"));
-        log.info("email: " + principal.getFirstAttribute("email"));
-        log.info("role: " + principal.getAttribute("urn:mace:dir:attribute-def:groups"));
-        return new ResponseEntity<>(map,HttpStatus.OK);
-    }
 
-    @GetMapping("/test")
+    @GetMapping("/api/test")
     public ResponseEntity<Map> test(@AuthenticationPrincipal Saml2AuthenticatedPrincipal principal) {
         HashMap<String,String> map = new HashMap<>();
         map.put("name",principal.getFirstAttribute("fullName"));

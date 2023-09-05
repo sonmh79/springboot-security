@@ -7,10 +7,14 @@ import com.example.sstest.util.HeaderUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationToken;
+import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -28,6 +32,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final AuthTokenProvider tokenProvider;
     private final List<String> excludedUris = Arrays.asList("/api/v1/auth/members/access-token");
 
+    @Autowired
+    private RelyingPartyRegistration relyingPartyRegistration;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
@@ -37,19 +44,19 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String headerToken = HeaderUtil.getAccessToken(request);
-        log.debug("헤더로 넘어온 토큰 : {}", headerToken);
+        String samlResponse = HeaderUtil.getAccessToken(request);
         AuthToken token = tokenProvider.convertAuthToken(headerToken);
 
         try {
             if (token.getToken() != null && token.validate()) {
 
-                Authentication authentication = tokenProvider.getAuthentication(token);
-                PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-                request.setAttribute("member", principalDetails.getMember());
+//                Authentication authentication = tokenProvider.getAuthentication(token);
+//                PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+//                request.setAttribute("member", principalDetails.getMember());
 
-                log.debug("TokenAuthenticationFilter로 접근한 member id(PK) : {}, 닉네임 : {}", principalDetails.getMember().getId(), principalDetails.getMember().getName());
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+//                log.debug("TokenAuthenticationFilter로 접근한 member id(PK) : {}, 닉네임 : {}", principalDetails.getMember().getId(), principalDetails.getMember().getName());
+                log.info("TokenAuthFilter 들어옴");
+                SecurityContextHolder.getContext().setAuthentication(new Saml2AuthenticationToken(relyingPartyRegistration,samlResponse));
             }
 
         } catch (JwtExpiredException e) {
