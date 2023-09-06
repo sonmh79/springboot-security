@@ -4,7 +4,6 @@ import com.example.sstest.auth.domain.AppProperties;
 import com.example.sstest.auth.domain.PrincipalDetails;
 import com.example.sstest.controller.data.LoginData;
 import com.example.sstest.controller.data.ReissuedAccessTokenData;
-import com.example.sstest.controller.request.LoginTestReq;
 import com.example.sstest.domain.Member;
 import com.example.sstest.exception.MemberNotFoundException;
 import com.example.sstest.exception.UnAuthorizedException;
@@ -17,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +24,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * {@code MemberService}는 로그인을 제외한 모든 유저 관련 로직을 처리하는 서비스입니다.
@@ -50,19 +52,28 @@ public class MemberService {
     /**
      * 관리자 계정 로그인을 처리합니다.
      *
-     * @param loginReq  관리자 계정 로그인을 요청한 member id가 담긴 객체
+     * @param principal  로그인을 요청한 유저 정보
      * @param httpServletRequest
      * @param httpServletResponse
      * @return 성공 시 닉네임, access token, isFirst를 담은 SocialLoginData 타입의 객체를 반환합니다.
      */
     @Transactional
-    public LoginData adminLogin(LoginTestReq loginReq, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        Member loginMember = memberRepository.findById(loginReq.getId()).orElseThrow(MemberNotFoundException::new);
+    public LoginData adminLogin(Saml2AuthenticatedPrincipal principal, String saml2Response, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        String email = principal.getFirstAttribute("email");
+
+        Optional<Member> member = memberRepository.findByEmail(email);
+        Member loginMember;
+        if (member.isEmpty()) {
+            loginMember = createMember(principal);
+        } else {
+            loginMember = member.get();
+        }
 
         Date now = new Date();
-        AuthToken accessToken = authTokenProvider.createAuthToken(
-                loginReq.getId(),
-                "ROLE_ADMIN",
+        AuthToken accessToken = authTokenProvider.createSaml2AuthToken(
+                email,
+                saml2Response,
+                loginMember.getRole(),
                 new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
         );
 
@@ -70,16 +81,36 @@ public class MemberService {
 
         loginMember.saveRefreshToken(refreshToken.getToken());
         memberRepository.save(loginMember);
-        log.info("refresh token DB 저장");
-
         LoginData loginData = LoginData.builder().memberId(loginMember.getId()).name(loginMember.getName()).accessToken(accessToken.getToken()).isFirst(false).build();
 
         int cookieMaxAge = (int) refreshTokenExpiry / 60;
         CookieUtil.deleteCookie(httpServletRequest, httpServletResponse, REFRESH_TOKEN);
         CookieUtil.addCookie(httpServletResponse, REFRESH_TOKEN, refreshToken.getToken(), cookieMaxAge);
-        log.info("관리자용 로그인 성공! {}", loginData);
 
         return loginData;
+    }
+
+    @Transactional
+    private Member createMember(Saml2AuthenticatedPrincipal principal) {
+        String email = principal.getFirstAttribute("email");
+        String name = principal.getFirstAttribute("fullName");
+        String userName = principal.getFirstAttribute("userName");
+        List<String> roles =  principal.getAttribute("urn:mace:dir:attribute-def:groups");
+        String role = new String();
+        for (String str : roles) {
+            role += str;
+            role += " ";
+        }
+
+        Member member = Member.builder()
+                .name(name)
+                .username(userName)
+                .email(email)
+                .role(role)
+                .active(true)
+                .build();
+        memberRepository.save(member);
+        return member;
     }
 
     /**
@@ -90,8 +121,8 @@ public class MemberService {
      * @param httpServletResponse
      */
     @Transactional
-    public void deleteRefreshToken(String memberId, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        Member member = memberRepository.findById(memberId).orElseThrow(MemberNotFoundException::new);
+    public void deleteRefreshToken(Integer memberId, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        Member member = memberRepository.findById(String.valueOf(memberId)).orElseThrow(MemberNotFoundException::new);
         member.deleteRefreshToken();
         memberRepository.save(member);
         CookieUtil.deleteCookie(httpServletRequest, httpServletResponse, REFRESH_TOKEN);
@@ -140,7 +171,7 @@ public class MemberService {
 
         log.debug("쿠키에 담긴 refreshToken : {}", cookieRefreshToken);
 
-        AuthToken accessToken = makeAccessToken(member.getId());
+        AuthToken accessToken = makeAccessToken(member.getId().toString());
 
         log.info("정상적으로 액세스토큰 재발급!!!");
 

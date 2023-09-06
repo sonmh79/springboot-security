@@ -1,22 +1,25 @@
 package com.example.sstest.config;
 
+import com.example.sstest.auth.domain.MySaml2Authentication;
 import com.example.sstest.jwt.AuthTokenProvider;
+import com.example.sstest.jwt.CustomFilter;
 import com.example.sstest.jwt.TokenAccessDeniedHandler;
-import com.example.sstest.jwt.TokenAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.opensaml.saml.saml2.core.Assertion;
+import org.opensaml.saml.saml2.core.AttributeStatement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.saml2.core.OpenSamlInitializationService;
 import org.springframework.security.saml2.provider.service.authentication.OpenSaml4AuthenticationProvider;
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
-import org.springframework.security.saml2.provider.service.servlet.filter.Saml2WebSsoAuthenticationFilter;
 import org.springframework.security.saml2.provider.service.servlet.filter.Saml2WebSsoAuthenticationRequestFilter;
 import org.springframework.security.saml2.provider.service.web.DefaultRelyingPartyRegistrationResolver;
 import org.springframework.security.saml2.provider.service.web.RelyingPartyRegistrationResolver;
@@ -30,6 +33,8 @@ import org.springframework.security.web.header.writers.ClearSiteDataHeaderWriter
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -56,10 +61,13 @@ public class SAMLSecurityConfig {
                     .createDefaultResponseAuthenticationConverter()
                     .convert(responseToken);
             Assertion assertion = responseToken.getResponse().getAssertions().get(0);
-            String username = assertion.getSubject().getNameID().getValue();
-//            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-//            return MySaml2Authentication(userDetails, authentication);
-            return authentication;
+            AttributeStatement attributeStatement = assertion.getAttributeStatements().get(0);
+            List<GrantedAuthority> authorities = attributeStatement.getAttributes().get(0).getAttributeValues().stream()
+                    .map(xmlObject -> xmlObject.getDOM().getTextContent())
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+            String saml2Response = responseToken.getToken().getSaml2Response();
+            return new MySaml2Authentication(saml2Response, authentication, authorities);
         });
 
         return http
@@ -71,7 +79,7 @@ public class SAMLSecurityConfig {
                                 .antMatchers("/api/v1/members/login").authenticated()
                                 .antMatchers("/api/test").authenticated()
                                 .anyRequest().permitAll()
-                ).saml2Login(withDefaults())
+                ).saml2Login(saml2 -> saml2.authenticationManager(new ProviderManager(authenticationProvider)))
                 .saml2Logout(withDefaults())
                 .logout(logout -> {
                     LogoutHandler successLogoutHandler = (request, response, authentication) -> {
@@ -94,7 +102,7 @@ public class SAMLSecurityConfig {
                             .addLogoutHandler(new HeaderWriterLogoutHandler(new ClearSiteDataHeaderWriter(ClearSiteDataHeaderWriter.Directive.COOKIES)))
                             .invalidateHttpSession(true);
                 })
-                .addFilterBefore(tokenAuthenticationFilter(), Saml2WebSsoAuthenticationRequestFilter.class)
+                .addFilterBefore(customFilter(), Saml2WebSsoAuthenticationRequestFilter.class)
                 .exceptionHandling().accessDeniedHandler(tokenAccessDeniedHandler)
                 .and()
                 .build();
@@ -110,8 +118,10 @@ public class SAMLSecurityConfig {
     }
 
     @Bean
-    public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        return new TokenAuthenticationFilter(tokenProvider);
+    public CustomFilter customFilter() throws Exception {
+        CustomFilter filter = new CustomFilter(new AntPathRequestMatcher("/api/test"), tokenProvider);
+        filter.setAuthenticationManager(new ProviderManager(new OpenSaml4AuthenticationProvider()));
+        return filter;
     }
 
 }

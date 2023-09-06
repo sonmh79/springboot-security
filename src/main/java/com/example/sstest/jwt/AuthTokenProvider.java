@@ -12,12 +12,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticationToken;
+import org.springframework.security.saml2.provider.service.authentication.DefaultSaml2AuthenticatedPrincipal;
+import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,6 +42,10 @@ public class AuthTokenProvider {
 
     public AuthToken createAuthToken(String id, String role, Date expiry) {
         return new AuthToken(id, role, expiry, key);
+    }
+
+    public AuthToken createSaml2AuthToken(String id, String saml2Response, String role, Date expiry) {
+        return new AuthToken(id, saml2Response, role, expiry, key);
     }
 
     public AuthToken convertAuthToken(String token) {
@@ -81,4 +84,21 @@ public class AuthTokenProvider {
         return new UsernamePasswordAuthenticationToken(principalDetails, authToken, authorities);
     }
 
+    public Saml2Authentication getSaml2Authentication(AuthToken authToken) {
+        if (authToken.validate()) {
+            Claims claims = authToken.getTokenClaims();
+            return getRealSam2Authentication(claims, authToken);
+        } else {
+            throw new TokenValidFailedException();
+        }
+    }
+
+    private Saml2Authentication getRealSam2Authentication(Claims claims, AuthToken authToken) {
+        List<String> authorities = new ArrayList<>();
+        StringTokenizer st = new StringTokenizer(claims.get(AUTHORITIES_KEY).toString());
+        while (st.hasMoreTokens()) {
+            authorities.add(st.nextToken());
+        }
+        return new Saml2Authentication(new DefaultSaml2AuthenticatedPrincipal(claims.get("email").toString(), new HashMap<>()), claims.get("saml2Response").toString(), authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+    }
 }

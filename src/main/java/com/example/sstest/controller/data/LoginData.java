@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 public class LoginData implements Data {
 
-    private String memberId;
+    private Integer memberId;
 
     private String name;
 

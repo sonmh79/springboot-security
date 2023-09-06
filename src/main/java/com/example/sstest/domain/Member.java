@@ -11,16 +11,23 @@ import java.io.Serializable;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class Member implements Serializable {
     @Id
-    @Column(length = 100)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment
+    private Integer id;
 
     @Column(name = "active")
     private boolean active;
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "email")
+    private String email;
 
     @Column(name = "profile_img")
     private String profileImg;
