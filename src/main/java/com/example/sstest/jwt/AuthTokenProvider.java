@@ -44,8 +44,8 @@ public class AuthTokenProvider {
         return new AuthToken(id, role, expiry, key);
     }
 
-    public AuthToken createSaml2AuthToken(String id, String saml2Response, String role, Date expiry) {
-        return new AuthToken(id, saml2Response, role, expiry, key);
+    public AuthToken createSaml2AuthToken(String id, String role, Date expiry) {
+        return new AuthToken(id, role, expiry, key);
     }
 
     public AuthToken convertAuthToken(String token) {

@@ -1,6 +1,7 @@
 package com.example.sstest.service;
 
 import com.example.sstest.auth.domain.AppProperties;
+import com.example.sstest.auth.domain.MySaml2Authentication;
 import com.example.sstest.auth.domain.PrincipalDetails;
 import com.example.sstest.controller.data.LoginData;
 import com.example.sstest.controller.data.ReissuedAccessTokenData;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,8 +60,9 @@ public class MemberService {
      * @return 성공 시 닉네임, access token, isFirst를 담은 SocialLoginData 타입의 객체를 반환합니다.
      */
     @Transactional
-    public LoginData adminLogin(Saml2AuthenticatedPrincipal principal, String saml2Response, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public LoginData adminLogin(Saml2AuthenticatedPrincipal principal, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String email = principal.getFirstAttribute("email");
+        String saml2Response = ((MySaml2Authentication) SecurityContextHolder.getContext().getAuthentication()).getSaml2Response();
 
         Optional<Member> member = memberRepository.findByEmail(email);
         Member loginMember;
@@ -72,7 +75,6 @@ public class MemberService {
         Date now = new Date();
         AuthToken accessToken = authTokenProvider.createSaml2AuthToken(
                 email,
-                saml2Response,
                 loginMember.getRole(),
                 new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
         );

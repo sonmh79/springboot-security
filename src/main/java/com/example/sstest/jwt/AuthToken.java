@@ -29,12 +29,6 @@ public class AuthToken {
         this.token = createAuthToken(id, role, expiry);
     }
 
-    public AuthToken(String id, String saml2Response, String role, Date expiry, Key key) {
-        this.key = key;
-        this.saml2Response = saml2Response;
-        this.token = createAuthToken(id, saml2Response, role, expiry);
-    }
-
     /**
      * key : Claim에 셋팅될 key 값
      * data : Claim에 셋팅 될 data 값

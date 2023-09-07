@@ -39,8 +39,8 @@ public class MemberController {
         log.info("username: " + principal.getFirstAttribute("userName"));
         log.info("email: " + principal.getFirstAttribute("email"));
         log.info("role: " + principal.getAttribute("urn:mace:dir:attribute-def:groups"));
-        String saml2Response = ((MySaml2Authentication) SecurityContextHolder.getContext().getAuthentication()).getSaml2Response();
-        Data loginData = memberService.adminLogin(principal, saml2Response, httpServletRequest, httpServletResponse);
+
+        Data loginData = memberService.adminLogin(principal, httpServletRequest, httpServletResponse);
 
         ResponseDTO responseDTO = ResponseDTO.builder()
                 .status(SUCCESS)
@@ -49,32 +49,6 @@ public class MemberController {
                 .build();
 
         log.info(SecurityContextHolder.getContext().getAuthentication().toString());
-
-        return new ResponseEntity<>(responseDTO, HttpStatus.OK);
-    }
-
-    /**
-     * 관리자 계정 로그인 처리합니다.
-     *
-     * @param email            관리자 계정의 email
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @return 성공 시 로그인 처리된 관리자 정보를 {@code ResponseEntity}로 반환합니다.
-     */
-    @PostMapping("/admin-login")
-    public ResponseEntity<ResponseDTO> adminLogin(@RequestBody String email, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        Data loginData = memberService.adminLogin(new Saml2AuthenticatedPrincipal() {
-            @Override
-            public String getName() {
-                return "admin";
-            }
-        }, "", httpServletRequest, httpServletResponse);
-
-        ResponseDTO responseDTO = ResponseDTO.builder()
-                .status(SUCCESS)
-                .message("admin 로그인 성공")
-                .data(loginData)
-                .build();
 
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
     }

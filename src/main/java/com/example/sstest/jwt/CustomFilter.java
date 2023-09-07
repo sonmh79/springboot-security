@@ -42,11 +42,6 @@ public class CustomFilter extends AbstractAuthenticationProcessingFilter {
         try {
             if (token.getToken() != null && token.validate()) {
 
-//                Authentication authentication = tokenProvider.getAuthentication(token);
-//                PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-//                request.setAttribute("member", principalDetails.getMember());
-
-//                log.debug("TokenAuthenticationFilter로 접근한 member id(PK) : {}, 닉네임 : {}", principalDetails.getMember().getId(), principalDetails.getMember().getName());
                 log.info("CustomAuthFilter 들어옴");
                 Saml2Authentication authentication = tokenProvider.getSaml2Authentication(token);
                 return getAuthenticationManager().authenticate(authentication);
