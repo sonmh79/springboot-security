@@ -1,6 +1,5 @@
 package com.example.sstest.controller.data;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -17,8 +16,5 @@ public class LoginData implements Data {
     private String statusMessage;
 
     private String accessToken;
-
-    @Getter(onMethod_ = {@JsonProperty("isFirst")})
-    private boolean isFirst;
 
 }

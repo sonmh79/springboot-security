@@ -26,8 +26,4 @@ public class HeaderUtil {
         return null;
     }
 
-    public static String getSamlResponse(HttpServletRequest request) {
-        return request.getHeader(HEADER_SAML_RESPONSE);
-    }
-
 }

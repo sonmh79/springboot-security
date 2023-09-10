@@ -1,8 +1,6 @@
 package com.example.sstest.service;
 
 import com.example.sstest.auth.domain.AppProperties;
-import com.example.sstest.auth.domain.MySaml2Authentication;
-import com.example.sstest.auth.domain.PrincipalDetails;
 import com.example.sstest.controller.data.LoginData;
 import com.example.sstest.controller.data.ReissuedAccessTokenData;
 import com.example.sstest.domain.Member;
@@ -16,9 +14,8 @@ import com.example.sstest.util.HeaderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.saml2.provider.service.authentication.Saml2AuthenticatedPrincipal;
+import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +59,6 @@ public class MemberService {
     @Transactional
     public LoginData adminLogin(Saml2AuthenticatedPrincipal principal, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         String email = principal.getFirstAttribute("email");
-        String saml2Response = ((MySaml2Authentication) SecurityContextHolder.getContext().getAuthentication()).getSaml2Response();
 
         Optional<Member> member = memberRepository.findByEmail(email);
         Member loginMember;
@@ -83,7 +79,7 @@ public class MemberService {
 
         loginMember.saveRefreshToken(refreshToken.getToken());
         memberRepository.save(loginMember);
-        LoginData loginData = LoginData.builder().memberId(loginMember.getId()).name(loginMember.getName()).accessToken(accessToken.getToken()).isFirst(false).build();
+        LoginData loginData = LoginData.builder().memberId(loginMember.getId()).name(loginMember.getName()).accessToken(accessToken.getToken()).build();
 
         int cookieMaxAge = (int) refreshTokenExpiry / 60;
         CookieUtil.deleteCookie(httpServletRequest, httpServletResponse, REFRESH_TOKEN);
@@ -143,11 +139,9 @@ public class MemberService {
         String headerAccessToken = HeaderUtil.getAccessToken(httpServletRequest);
 
         AuthToken authHeaderAccessToken = tokenProvider.convertAuthToken(headerAccessToken);
-        Authentication authentication = tokenProvider.getExpiredUser(authHeaderAccessToken);
+        Saml2Authentication authentication = tokenProvider.getExpiredUser(authHeaderAccessToken);
 
-        PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-
-        Member member = principalDetails.getMember();
+        Member member = ((Saml2AuthenticatedPrincipal) authentication.getPrincipal()).getFirstAttribute("member");
         String cookieRefreshToken = CookieUtil.getCookie(httpServletRequest, REFRESH_TOKEN)
                 .map(Cookie::getValue)
                 .orElse(null);

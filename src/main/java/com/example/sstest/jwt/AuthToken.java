@@ -16,7 +16,6 @@ public class AuthToken {
     @Getter
     private final String token;
     private final Key key;
-    private String saml2Response;
     private static final String AUTHORITIES_KEY = "role";
 
     public AuthToken(Date expiry, Key key) {
@@ -52,18 +51,6 @@ public class AuthToken {
                 .setSubject("accessToken")
                 .claim(AUTHORITIES_KEY, role)
                 .claim("email", id)
-                .setExpiration(expiry)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    private String createAuthToken(String email, String saml2Response, String role, Date expiry) {
-        return Jwts.builder()
-                .setHeaderParam("type", "JWT")
-                .setSubject("accessToken")
-                .claim(AUTHORITIES_KEY, role)
-                .claim("email", email)
-                .claim("saml2Response", saml2Response)
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();

@@ -38,5 +38,9 @@ out/
 
 
 ### Security
-**/src/main/resources/application.yml
+**/src/main/resources/**
 **/src/main/resources/saml-certificate/
+
+keystore.jks
+src/main/.DS_Store
+temp.p12

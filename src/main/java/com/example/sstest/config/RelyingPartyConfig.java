@@ -13,7 +13,6 @@ import org.springframework.security.saml2.provider.service.registration.RelyingP
 import java.io.File;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 
 @Configuration
 public class RelyingPartyConfig {
@@ -27,9 +26,6 @@ public class RelyingPartyConfig {
     @Value("${saml.ssafy.service-location}")
     private String serviceLocation;
 
-    @Value("${private.key}")
-    RSAPrivateKey privateKey;
-
     @Bean
     public RelyingPartyRegistrationRepository relyingPartyRegistrations() throws Exception {
 
@@ -42,9 +38,9 @@ public class RelyingPartyConfig {
         File verificationKey = new File(classLoader.getResource(keyPath).getFile());
         X509Certificate certificate = X509Support.decodeCertificate(verificationKey);
         Saml2X509Credential credential = Saml2X509Credential.verification(certificate);
-        Saml2X509Credential myCredential = Saml2X509Credential.signing(privateKey, certificate);
         RelyingPartyRegistration registration = RelyingPartyRegistration
-                .withRegistrationId("ssafy-saml")
+                .withRegistrationId("ssafy")
+                .assertionConsumerServiceLocation("{baseUrl}/api/v1/login/sso/saml2/{registrationId}")
                 .assertingPartyDetails(party -> party
                         .entityId(entityId)
                         .singleSignOnServiceLocation(serviceLocation)
@@ -53,7 +49,6 @@ public class RelyingPartyConfig {
                         .verificationX509Credentials(c -> c.add(credential))
                 )
                 .singleLogoutServiceLocation("{baseUrl}/logout/saml2/slo")
-                .signingX509Credentials((signing) -> signing.add(myCredential))
                 .build();
         return registration;
     }

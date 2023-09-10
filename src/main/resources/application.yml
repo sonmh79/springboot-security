@@ -11,8 +11,8 @@ jwt:
 app:
   auth:
     token-secret:
-    token-expiry: 86400000 # 24시간
-    #    token-expiry: 10000 # 10초
+#    token-expiry: 86400000 # 24시간
+    token-expiry: 60000 # 1분
     refresh-token-expiry: 1209600000 # 7일
 
 saml:

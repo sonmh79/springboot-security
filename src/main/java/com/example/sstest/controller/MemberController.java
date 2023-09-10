@@ -1,6 +1,5 @@
 package com.example.sstest.controller;
 
-import com.example.sstest.auth.domain.MySaml2Authentication;
 import com.example.sstest.controller.data.Data;
 import com.example.sstest.controller.reponse.ResponseDTO;
 import com.example.sstest.domain.Member;
@@ -51,6 +50,15 @@ public class MemberController {
         log.info(SecurityContextHolder.getContext().getAuthentication().toString());
 
         return new ResponseEntity<>(responseDTO, HttpStatus.OK);
+    }
+
+    @GetMapping("/auth/test")
+    public String test(HttpServletRequest request, HttpServletResponse response) {
+        Member member = (Member) request.getAttribute("member");
+        log.info(member.getEmail());
+        log.info(member.getName());
+        log.info(member.getUsername());
+        return "Hello its test";
     }
 
     /**
