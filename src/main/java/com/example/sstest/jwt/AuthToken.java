@@ -1,5 +1,6 @@
 package com.example.sstest.jwt;
 
+import com.example.sstest.domain.Member;
 import com.example.sstest.exception.JwtExpiredException;
 import io.jsonwebtoken.*;
 import lombok.Getter;
@@ -23,9 +24,9 @@ public class AuthToken {
         this.token = createAuthToken(expiry);
     }
 
-    public AuthToken(String id, String role, Date expiry, Key key) {
+    public AuthToken(Member member, Date expiry, Key key) {
         this.key = key;
-        this.token = createAuthToken(id, role, expiry);
+        this.token = createAuthToken(member, expiry);
     }
 
     /**
@@ -51,6 +52,20 @@ public class AuthToken {
                 .setSubject("accessToken")
                 .claim(AUTHORITIES_KEY, role)
                 .claim("email", id)
+                .setExpiration(expiry)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    private String createAuthToken(Member member, Date expiry) {
+        return Jwts.builder()
+                .setHeaderParam("type", "JWT")
+                .setSubject("accessToken")
+                .claim(AUTHORITIES_KEY, member.getRole())
+                .claim("id", member.getId())
+                .claim("name", member.getName())
+                .claim("username", member.getUsername())
+                .claim("email", member.getEmail())
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();

@@ -70,8 +70,7 @@ public class MemberService {
 
         Date now = new Date();
         AuthToken accessToken = authTokenProvider.createSaml2AuthToken(
-                email,
-                loginMember.getRole(),
+                loginMember,
                 new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
         );
 
@@ -167,7 +166,7 @@ public class MemberService {
 
         log.debug("쿠키에 담긴 refreshToken : {}", cookieRefreshToken);
 
-        AuthToken accessToken = makeAccessToken(member.getId().toString());
+        AuthToken accessToken = makeAccessToken(member);
 
         log.info("정상적으로 액세스토큰 재발급!!!");
 
@@ -177,14 +176,13 @@ public class MemberService {
     /**
      * access token을 발급합니다.
      *
-     * @param memberId access token을 생성할 member id
+     * @param member access token을 생성할 member
      * @return 성공 시 발급된 access token을 AuthToken 타입의 객체로 반환합니다.
      */
-    public AuthToken makeAccessToken(String memberId) {
+    public AuthToken makeAccessToken(Member member) {
         Date now = new Date();
-        return tokenProvider.createAuthToken(
-                memberId,
-                ROLE,
+        return tokenProvider.createSaml2AuthToken(
+                member,
                 new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
         );
     }
@@ -196,7 +194,7 @@ public class MemberService {
      */
     public AuthToken makeRefreshToken() {
         Date now = new Date();
-        return tokenProvider.createAuthToken(new Date(now.getTime() + refreshTokenExpiry));
+        return tokenProvider.createSaml2AuthToken(new Date(now.getTime() + refreshTokenExpiry));
     }
 
     /**

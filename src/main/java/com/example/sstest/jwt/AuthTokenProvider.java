@@ -34,16 +34,12 @@ public class AuthTokenProvider {
         this.memberRepository = memberRepository;
     }
 
-    public AuthToken createAuthToken(Date expiry) {
+    public AuthToken createSaml2AuthToken(Date expiry) {
         return new AuthToken(expiry, key);
     }
 
-    public AuthToken createAuthToken(String id, String role, Date expiry) {
-        return new AuthToken(id, role, expiry, key);
-    }
-
-    public AuthToken createSaml2AuthToken(String id, String role, Date expiry) {
-        return new AuthToken(id, role, expiry, key);
+    public AuthToken createSaml2AuthToken(Member member, Date expiry) {
+        return new AuthToken(member, expiry, key);
     }
 
     public AuthToken convertAuthToken(String token) {
